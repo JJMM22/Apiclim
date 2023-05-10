@@ -2,58 +2,66 @@
 #include <HTTPClient.h> // nos permite hacer peticiones http
 #include <ArduinoJson.h>
 #include <DHT.h>
+#include "FirebaseESP32.h"
 
-#define DHTPIN 27
-#define DHTTYPE  DHT22
+#define FIREBASE_HOST "https://proyectclima-default-rtdb.firebaseio.com"
+#define FIREBASE_AUTH "8W3OQmXGmTbNSKfR9HycMkodjUOpjBzLuadjQOUT"
+FirebaseData ProyectClima;
+String ruta = "Sensores";
 
-DHT dht(DHTPIN, DHTTYPE, 22); 
+const char* ssid = "MORAN_6BAA";
+const char* pass = "M0R4N2322";
 
+#include "DHT.h"
+#define DHTPIN 23
+#define DHTTYPE DHT11
+DHT dht (DHTPIN, DHTTYPE);
 
-// credenciales de la red a la cual nos conectaremos
-const char* ssid = "red";
-const char* password = "password";
-//const char* ssid = "Tenda_3DE948";
-//const char* password = "18264838";
-//IPAddress ip(192,168,10,9);     
-//IPAddress gateway(192,168,10,1);   
-//IPAddress subnet(255,255,255,0);   
-//Temperatura
-
+float h;
+float t;
 
 void setup() {
-    Serial.begin(115200);
-     dht.begin(); 
-
-    // conexión a la red
-  //    WiFi.mode(WIFI_STA);
-    //  WiFi.config(ip, gateway, subnet);
-      WiFi.begin(ssid, password);
-//    IPAddress ip(192,168,10,145);     
-//    IPAddress gateway(192,168,10,1);   
-//    IPAddress subnet(255,255,255,0);   
-    Serial.println("Connecting");
-    while(WiFi.status() != WL_CONNECTED) { 
+  // put your setup code here, to run once:
+  Serial.begin(115200);
+  WiFi.begin(ssid, pass);
+  delay(2000);
+  Serial.print("Se esta conectado a la red WiFi denominada");
+  Serial.println(ssid);
+  while (WiFi.status() !=WL_CONNECTED) {
     delay(500);
     Serial.print(".");
-    }
-    Serial.println("");
-    Serial.print("Conectado a la red con la IP: ");
-    Serial.println(WiFi.localIP());
-    Serial.println();
+  }
+
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  Firebase.reconnectWiFi(true);
+
+  Serial.println(F("DHTxx test!"));
+  dht.begin();
+  if (isnan(h) || isnan(t)) {
+    Serial.println(F("Falla de la Lectura del Sensor"));
+    return;
+  }
 
 }
 
 void loop() {
-  if(WiFi.status()== WL_CONNECTED ){ 
- //se agregan valores al documento
-DynamicJsonDocument doc(2048);
+  // put your main code here, to run repeatedly:
+  delay(1000);
+  h = dht.readHumidity();
+  t = dht.readTemperature();
+  Serial.print("Humedad: ");
+  Serial.print(h);
+  Serial.print(", Temperatura: ");
+  Serial.print(t);
+  Serial.print("");
 
-  doc["temp"] = dht.readTemperature();
-  doc["hum"] = dht.readHumidity();
-  doc["gas"] =  analogRead(35);
-  doc["ruido"] =  analogRead(34)/100;
-  doc["nombre"] =  "ITSRLL";
-  //doc["fecha"] = rtc.getDate();
+  Firebase.setInt(ProyectClima, ruta + "/SensorT", t);
+  Firebase.setInt(ProyectClima, ruta + "/SensorH", h);
 
 // documento serializado
 String json;
