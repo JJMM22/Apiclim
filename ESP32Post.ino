@@ -70,7 +70,7 @@ serializeJson(doc, json);
 WiFiClient client;  // or WiFiClientSecure for HTTPS
 HTTPClient http;
 // Send request
-http.begin("https://link de la API/insertar");
+http.begin("https://apiclimaservicio2.onrender.com");
 //cabeceras JSON
 http.addHeader("Content-Type", "application/json");
 int res = http.POST(json);
